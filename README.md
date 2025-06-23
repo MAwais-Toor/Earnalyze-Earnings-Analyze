@@ -2,7 +2,7 @@
 
 A simple and modern web app to track your daily, weekly, and monthly earnings. Built with **HTML**, **Tailwind CSS**, **JavaScript**, and **Chart.js** — with no backend required.
 
-![Earnings Tracker Preview](preview.png) <!-- Optional: Replace with your screenshot -->
+![Earnings Tracker Preview](https://github.com/MAwais-Toor/Earnalyze-Earnings-Analyze/blob/main/images/dashboard.png) 
 
 ---
 
@@ -29,7 +29,7 @@ A simple and modern web app to track your daily, weekly, and monthly earnings. B
 
 ## 📸 Preview
 
-> ![Screenshot](screenshot.png)  
+> ![Screenshot](https://github.com/MAwais-Toor/Earnalyze-Earnings-Analyze/blob/main/images/dashboard.png)
 > *A clean dashboard to manage and visualize your income.*
 
 ---
@@ -38,5 +38,11 @@ A simple and modern web app to track your daily, weekly, and monthly earnings. B
 
 ```bash
 git clone https://github.com/yourusername/earnings-tracker.git
-cd earnings-tracker
-open index.html
+open MATsHub.html
+```
+
+---
+
+💼 **Need web Develoment?**  
+Visit our official site: 👉 [matshub.vercel.app](http://matshub.vercel.app/)
+
