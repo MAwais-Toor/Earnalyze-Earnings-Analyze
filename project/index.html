@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MATsHub Dashboard Earnings</title>
   <!-- favicon -->
-  <link rel="icon" type="image/x-icon" href="favicon.png" />
+  <link rel="icon" type="image/x-icon" href="./assets/images/favicon.png" />
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -80,7 +80,8 @@
       </div>
 
       <!-- Cards Section -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
+
         <div class="bg-card p-4 rounded-xl shadow text-center">
           <p class="text-sm text-muted">Total Entries</p>
           <p class="text-xl font-semibold" id="totalEntries">0</p>
@@ -91,7 +92,7 @@
             <p class="text-xl font-semibold" id="todayEarnings">PKR 0</p>
             <div class="relative">
               <i id="todayTrend" class="fas fa-minus text-gray-400 cursor-pointer"></i>
-              <div id="trendTooltip"
+              <div id="todayTooltip"
                 class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap bg-gray-800 text-white text-xs px-3 py-1 rounded-md shadow-md opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none z-20">
                 No change from yesterday
               </div>
@@ -141,6 +142,8 @@
         </div>
 
       </div>
+      <hr class="border-muted/30 my-4" />
+
 
       <!-- Filters & Actions -->
       <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
@@ -148,19 +151,44 @@
           <input id="amount" type="number" placeholder="Amount"
             class="p-3 rounded-md bg-card text-white border border-muted w-full sm:w-auto" />
           <input id="date" type="date" class="p-3 rounded-md bg-card text-white border border-muted w-full sm:w-auto" />
-          <select id="filter" onchange="updateChart()"
-            class="p-3 rounded-md bg-card text-white border border-muted w-full sm:w-auto">
-            <option value="all">All Time</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-          </select>
+          <div class="relative w-full sm:w-auto">
+            <select id="filter" onchange="updateChart()"
+              class="appearance-none w-full p-3 pr-10 rounded-md bg-card text-white border border-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+              <option value="all">All Time</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted">
+              <i class="fas fa-chevron-down text-sm"></i>
+            </div>
+          </div>
+
+
+
         </div>
 
-        <div class="flex gap-2">
-          <button onclick="addEarning()" class="bg-primary text-white px-4 py-2 rounded-md">Add</button>
-          <button onclick="clearEarnings()" class="bg-danger text-white px-4 py-2 rounded-md">Clear</button>
+        <div class="flex flex-wrap gap-2">
+          <!-- Add Earning Button -->
+          <button onclick="addEarning()" class="bg-primary text-white px-4 py-2 rounded-md flex items-center gap-2">
+            <i class="fas fa-plus-circle"></i>
+            Add
+          </button>
+
+          <!-- Clear All Button -->
+          <button onclick="clearEarnings()" class="bg-danger text-white px-4 py-2 rounded-md flex items-center gap-2">
+            <i class="fas fa-trash-alt"></i>
+            Clear All
+          </button>
+
+          <button onclick="location.href='summary.html'"
+            class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition flex items-center gap-2">
+            <i class="fas fa-chart-pie"></i>
+            View Summary
+          </button>
+
         </div>
       </div>
+
 
 
       <!-- Charts -->
@@ -178,13 +206,29 @@
       <!-- Table -->
       <div class="bg-card p-4 rounded-xl shadow overflow-x-auto">
         <table id="entryTable" class="w-full"></table>
+
         <div id="paginationControls" class="mt-4"></div>
 
       </div>
     </div>
   </div>
+  <!-- End of Dashboard -->
+  <!-- Notification Toast -->
+  <div id="toast"
+    class="fixed bottom-6 right-6 z-50 opacity-0 translate-y-4 pointer-events-none transition-all duration-300">
+    <div
+      class="flex items-center gap-3 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg shadow-black/30 min-w-[250px] max-w-sm">
+      <i class="fas fa-check-circle text-white text-xl"></i>
+      <span id="toastMessage" class="flex-1 font-medium text-sm"></span>
+    </div>
+  </div>
+  <audio id="notificationSound" src="./assets/sounds/added.mp3" preload="auto"></audio>
+
+
+
+  <!-- End of Notification Toast -->
   <!-- Chart & Logic Script -->
-  <script src="MATsHub.js"></script>
+  <script src="./assets/js/MATsHub.js"></script>
 </body>
 
 </html>

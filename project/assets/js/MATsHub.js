@@ -24,13 +24,24 @@ if (ctx && pieCtx) {
     },
     options: {
       responsive: true,
-      plugins: { legend: { labels: { color: '#ddd' } } },
+      plugins: {
+        legend: { labels: { color: '#ddd' } }
+      },
       scales: {
-        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
-        y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+        x: {
+          ticks: { color: '#aaa' },
+          grid: { color: '#333' }
+        },
+        y: {
+          beginAtZero: true, // always start from 0
+          ticks: { color: '#aaa' },
+          grid: { color: '#333' },
+          suggestedMax: 1000 // will be updated dynamically
+        }
       }
     }
   });
+
 
   pieChart = new Chart(pieCtx, {
     type: 'doughnut',
@@ -149,78 +160,113 @@ function updateTrend(id, current, previous) {
 function updateChart() {
   const filter = document.getElementById("filter")?.value || "all";
   const now = new Date();
-  let filtered = earnings;
+  let filtered = [...earnings];
 
+  // Filter by week
   if (filter === "week") {
     const weekAgo = new Date();
     weekAgo.setDate(now.getDate() - 7);
-    filtered = earnings.filter(e => new Date(e.date.split("/").reverse().join("/")) >= weekAgo);
-  } else if (filter === "month") {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    filtered = earnings.filter(e => new Date(e.date.split("/").reverse().join("/")) >= monthStart);
+    filtered = earnings.filter(e => {
+      const d = new Date(e.date.split("/").reverse().join("-"));
+      return d >= weekAgo;
+    });
   }
 
-  if (chart && pieChart) {
+  // Filter by month
+  else if (filter === "month") {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    filtered = earnings.filter(e => {
+      const d = new Date(e.date.split("/").reverse().join("-"));
+      return d >= monthStart;
+    });
+  }
+
+  // Update line chart
+  if (chart) {
     chart.data.labels = filtered.map(e => e.date);
     chart.data.datasets[0].data = filtered.map(e => e.amount);
-    chart.update();
 
+    const maxAmount = Math.max(...filtered.map(e => e.amount), 0);
+    chart.options.scales.y.suggestedMax = maxAmount + maxAmount * 0.2;
+
+    chart.update();
+  }
+
+
+  // Update pie chart
+  if (pieChart) {
     const pieData = {};
     filtered.forEach(e => {
-      const d = e.date.split('/').slice(1).join('/');
-      pieData[d] = (pieData[d] || 0) + e.amount;
+      const label = e.date.split("/").slice(1).join("/"); // MM/YYYY
+      pieData[label] = (pieData[label] || 0) + e.amount;
     });
     pieChart.data.labels = Object.keys(pieData);
     pieChart.data.datasets[0].data = Object.values(pieData);
     pieChart.update();
   }
 
+  // Refresh dashboard
   updateStatsUI();
   updateTable();
 }
+
 
 function updateTable() {
   const table = document.getElementById("entryTable");
   const pagination = document.getElementById("paginationControls");
 
-  if (!earnings.length) {
-    table.innerHTML = "<tr><td colspan='3' class='text-center p-4'>No entries found.</td></tr>";
+  if (!earnings || earnings.length === 0) {
+    table.innerHTML = `<div class="text-center text-muted py-8"><p class="text-lg">No entries found.</p></div>`;
     pagination.innerHTML = "";
     return;
   }
 
+  const sorted = [...earnings].sort((a, b) => new Date(b.date.split("/").reverse().join("/")) - new Date(a.date.split("/").reverse().join("/")));
   const start = (currentPage - 1) * rowsPerPage;
-  const end = start + rowsPerPage;
-  const paginated = earnings.slice(start, end);
+  const paginated = sorted.slice(start, start + rowsPerPage);
 
-  let rows = `<tr class='border-b border-muted'>
-      <th class='text-left p-3'>Date</th>
-      <th>Amount</th>
-      <th>Action</th>
-    </tr>`;
-
-  paginated.forEach((e, i) => {
-    const index = start + i;
-    rows += `<tr class='border-b border-muted'>
-      <td class='p-3'>${e.date}</td>
-      <td class='p-3'>
-        <input type="number" class="p-2 border rounded bg-card text-white border-muted" value="${e.amount}" onchange="editAmount(${index}, this.value)" />
-      </td>
-      <td class='p-3'>
-        <button onclick="removeEntry(${index})" class="text-danger">🗑️</button>
-      </td>
-    </tr>`;
-  });
-
-  table.innerHTML = rows;
+  table.innerHTML = `
+    <div class="grid grid-cols-1 divide-y divide-muted">
+      <div class="grid grid-cols-3 font-semibold text-muted uppercase text-sm px-4 py-2 bg-card border-b border-muted rounded-t-md">
+        <div>Date</div>
+        <div class="text-center">Amount</div>
+        <div class="text-right">Action</div>
+      </div>
+      ${paginated.map((e, i) => {
+    const index = earnings.findIndex(x => x.date === e.date && x.amount === e.amount);
+    return `
+          <div class="grid grid-cols-3 items-center px-4 py-4 bg-card hover:bg-white/5 transition rounded-md">
+            <div class="text-sm">${e.date}</div>
+            <div class="text-center">
+              <input type="number"
+                class="bg-dark border border-muted text-white px-3 py-1 rounded-md w-24 text-center focus:outline-none focus:ring focus:ring-primary transition"
+                value="${e.amount}"
+                onchange="editAmount(${index}, this.value)" />
+            </div>
+            <div class="text-right">
+              <button onclick="removeEntry(${index})"
+                class="text-danger hover:text-red-400 transition text-lg" title="Delete">🗑️</button>
+            </div>
+          </div>
+        `;
+  }).join('')}
+    </div>
+  `;
 
   const totalPages = Math.ceil(earnings.length / rowsPerPage);
   pagination.innerHTML = `
-    <div class="flex justify-center items-center gap-4 mt-4">
-      <button onclick="prevPage()" ${currentPage === 1 ? "disabled" : ""} class="px-3 py-1 bg-muted rounded text-black">Prev</button>
+    <div class="flex justify-center items-center gap-4 mt-6">
+      <button onclick="prevPage()" ${currentPage === 1 ? "disabled" : ""}
+        class="px-3 py-1 rounded-md bg-muted text-black hover:bg-muted/80 transition disabled:opacity-50 disabled:cursor-not-allowed">
+        < Prev
+      </button>
       <span class="text-sm text-muted">Page ${currentPage} of ${totalPages}</span>
-      <button onclick="nextPage()" ${currentPage === totalPages ? "disabled" : ""} class="px-3 py-1 bg-muted rounded text-black">Next</button>
-    </div>`;
+      <button onclick="nextPage()" ${currentPage === totalPages ? "disabled" : ""}
+        class="px-3 py-1 rounded-md bg-muted text-black hover:bg-muted/80 transition disabled:opacity-50 disabled:cursor-not-allowed">
+        Next >
+      </button>
+    </div>
+  `;
 }
 
 function nextPage() {
@@ -236,23 +282,6 @@ function prevPage() {
     currentPage--;
     updateTable();
   }
-}
-
-function addEarning() {
-  const amount = parseFloat(document.getElementById("amount").value);
-  const dateRaw = document.getElementById("date").value;
-  if (!amount || !dateRaw) return alert("Enter valid amount and date.");
-
-  const date = new Date(dateRaw).toLocaleDateString("en-GB");
-  const existing = earnings.find(e => e.date === date);
-  if (existing) existing.amount += amount;
-  else earnings.push({ date, amount });
-
-  earnings.sort((a, b) => new Date(a.date.split("/").reverse().join("-")) - new Date(b.date.split("/").reverse().join("-")));
-  localStorage.setItem("earningsData", JSON.stringify(earnings));
-  document.getElementById("amount").value = "";
-  document.getElementById("date").value = "";
-  updateChart();
 }
 
 function editAmount(index, value) {
@@ -280,8 +309,27 @@ function clearEarnings() {
   }
 }
 
+function addEarning() {
+  const amount = parseFloat(document.getElementById("amount").value);
+  const dateRaw = document.getElementById("date").value;
+  if (!amount || !dateRaw) return alert("Enter valid amount and date.");
+
+  const date = new Date(dateRaw).toLocaleDateString("en-GB");
+  const existing = earnings.find(e => e.date === date);
+  if (existing) existing.amount += amount;
+  else earnings.push({ date, amount });
+
+  earnings.sort((a, b) => new Date(a.date.split("/").reverse().join("-")) - new Date(b.date.split("/").reverse().join("-")));
+  localStorage.setItem("earningsData", JSON.stringify(earnings));
+  document.getElementById("amount").value = "";
+  document.getElementById("date").value = "";
+  updateChart();
+  showToast(`PKR ${amount.toLocaleString()} added successfully!`);
+}
+
+
 // Admin login
-const ADMIN = { username: "admin", password: "1234" };
+const ADMIN = { username: "awais", password: "865422" };
 
 function login(e) {
   e.preventDefault();
@@ -305,6 +353,30 @@ function showDashboard() {
   document.getElementById("dashboardContainer").style.display = "block";
   updateChart();
 }
+
+// Toast notification
+function showToast(message = "Earning added successfully!") {
+  const toast = document.getElementById("toast");
+  const toastMessage = document.getElementById("toastMessage");
+  const sound = document.getElementById("notificationSound");
+
+  if (!toast || !toastMessage || !sound) return;
+
+  toastMessage.textContent = message;
+  toast.classList.remove("opacity-0", "translate-y-4");
+  toast.classList.add("opacity-100", "translate-y-0");
+
+  // Play the sound
+  sound.currentTime = 0;
+  sound.play();
+
+  setTimeout(() => {
+    toast.classList.remove("opacity-100", "translate-y-0");
+    toast.classList.add("opacity-0", "translate-y-4");
+  }, 3000);
+}
+
+
 
 if (localStorage.getItem("loggedIn") === "true") showDashboard();
 

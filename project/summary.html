@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-dark text-white">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Summary - MATsHub</title>
+    <link rel="icon" href="./assets/images/favicon.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f1115',
+                        card: '#1c1f26',
+                        accent: '#4ade80',
+                        danger: '#ef4444',
+                        muted: '#9ca3af',
+                        primary: '#2563eb',
+                        secondary: '#facc15'
+                    },
+                    backdropBlur: {
+                        sm: '4px',
+                        md: '12px',
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.3s ease-out'
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+</head>
+
+<body class="bg-dark text-white min-h-screen px-4 sm:px-8 py-6 font-sans tracking-tight">
+
+    <div class="max-w-6xl mx-auto space-y-10">
+        <!-- Heading -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-3xl font-bold flex items-center gap-3">
+                <i class="fas fa-wallet text-primary text-2xl"></i>
+                Summary Dashboard
+            </h1>
+            <button onclick="location.href='MATsHub.html'"
+                class="text-sm bg-muted text-black px-4 py-2 rounded-lg hover:bg-muted/80 transition">
+                ← Back
+            </button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <!-- Total Earnings -->
+            <div class="bg-white/5 backdrop-blur-md rounded-2xl p-6 shadow border border-white/10 text-center">
+                <p class="text-sm text-muted mb-1">Shop's Earnings</p>
+                <p id="totalEarnings" class="text-2xl font-bold text-yellow-500">PKR 0</p>
+            </div>
+
+            <!-- Total Amount -->
+            <div class="bg-white/5 backdrop-blur-md rounded-2xl p-6 shadow border border-white/10 text-center">
+                <p class="text-sm text-muted mb-1">Amount (Shop + Others)</p>
+                <p id="totalAmount" class="text-2xl font-bold text-accent">PKR 0</p>
+            </div>
+
+            <!-- Deducted Amount -->
+            <div class="bg-white/5 backdrop-blur-md rounded-2xl p-6 shadow border border-white/10 text-center">
+                <p class="text-sm text-muted mb-1">Deducted Amount</p>
+                <p id="deductedAmount" class="text-2xl font-bold text-danger">PKR 0</p>
+            </div>
+
+            <!-- Net Amount -->
+            <div class="bg-white/5 backdrop-blur-md rounded-2xl p-6 shadow border border-white/10 text-center">
+                <p class="text-sm text-muted mb-1">Net Amount (Available)</p>
+                <p id="netAmount" class="text-2xl font-bold text-primary">PKR 0</p>
+            </div>
+
+        </div>
+
+
+        <!-- Input Section -->
+        <div class="grid sm:grid-cols-3 gap-4">
+            <!-- Amount Input -->
+            <input id="amountInput" type="number" placeholder="Amount"
+                class="w-full p-3 bg-card border border-muted rounded-lg text-white placeholder-muted focus:ring-2 focus:ring-primary focus:outline-none transition" />
+
+            <!-- Description Input -->
+            <input id="descInput" type="text" placeholder="Description (why add/deduct)"
+                class="w-full p-3 bg-card border border-muted rounded-lg text-white placeholder-muted focus:ring-2 focus:ring-primary focus:outline-none transition" />
+
+            <!-- Date Picker -->
+            <input id="dateInput" type="date"
+                class="w-full p-3 bg-card border border-muted rounded-lg text-white placeholder-muted focus:ring-2 focus:ring-primary focus:outline-none transition" />
+        </div>
+
+
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4">
+            <button onclick="adjustMoney('add')"
+                class="w-full sm:w-auto bg-accent text-black font-medium px-6 py-3 rounded-lg hover:bg-green-500 transition flex items-center gap-2 justify-center">
+                <i class="fas fa-plus-circle"></i> Add Amount
+            </button>
+            <button onclick="adjustMoney('deduct')"
+                class="w-full sm:w-auto bg-danger text-white font-medium px-6 py-3 rounded-lg hover:bg-red-500 transition flex items-center gap-2 justify-center">
+                <i class="fas fa-minus-circle"></i> Deduct Amount
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex gap-3 items-center">
+                <label for="filterType" class="text-sm text-muted">Filter:</label>
+                <select id="filterType" onchange="updateTable()"
+                    class="p-2 bg-card border border-muted text-white rounded-lg text-sm focus:ring-primary focus:outline-none">
+                    <option value="all">All</option>
+                    <option value="add">Additions</option>
+                    <option value="deduct">Deductions</option>
+                </select>
+            </div>
+            <div class="text-sm text-muted">Total Adjustments: <span id="adjustmentCount"
+                    class="font-bold text-white">0</span></div>
+            <button onclick="resetAdjustments()"
+                class="bg-danger text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm">
+                <i class="fas fa-rotate-right"></i> Reset All
+            </button>
+        </div>
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <!-- Line Chart Card -->
+            <div
+                class="md:col-span-2 bg-gradient-to-br from-[#1c1f26] to-[#0f1115] p-6 rounded-2xl shadow-lg border border-white/10">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+                        <i class="fas fa-chart-line text-primary"></i>
+                        Adjustment Over Time
+                    </h3>
+                    <span class="text-sm text-muted">Daily Trend Analysis</span>
+                </div>
+                <div class="relative h-60">
+                    <canvas id="adjustmentLineChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+
+            <!-- Doughnut Chart Card -->
+            <div class="bg-gradient-to-br from-[#1c1f26] to-[#0f1115] p-6 rounded-2xl shadow-lg border border-white/10">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-accent"></i>
+                        Adjustment Ratio
+                    </h3>
+                    <span class="text-sm text-muted">Add vs Deduct</span>
+                </div>
+                <div class="relative h-60">
+                    <canvas id="adjustmentPieChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Charts Section End -->
+
+
+        <!-- Table -->
+        <div class="bg-card p-6 rounded-xl shadow border border-white/10 overflow-x-auto">
+            <h3 class="text-lg font-semibold mb-4">Adjustment History</h3>
+            <table class="w-full min-w-[600px] text-sm">
+                <thead class="text-muted border-b border-muted/30">
+                    <tr>
+                        <th class="py-2 text-left">Date</th>
+                        <th class="py-2 text-left">Type</th>
+                        <th class="py-2 text-left">Amount</th>
+                        <th class="py-2 text-left">Description</th>
+                        <th class="py-2 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="adjustmentsTable"></tbody>
+            </table>
+            <!-- Pagination Controls -->
+
+            <div class="flex justify-between items-center mt-4 text-sm text-muted">
+                <button id="prevBtn" onclick="changePage(-1)"
+                    class="px-4 py-2 bg-card border border-muted rounded hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    ← Prev
+                </button>
+                <span id="pageInfo">Page 1</span>
+                <button id="nextBtn" onclick="changePage(1)"
+                    class="px-4 py-2 bg-card border border-muted rounded hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next →
+                </button>
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+    <!-- Modern Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 z-50 opacity-0 translate-y-4 pointer-events-none transition-all duration-300">
+        <div id="toastBox"
+            class="flex items-center gap-3 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg shadow-black/30 min-w-[250px] max-w-sm">
+            <i id="toastIcon" class="fas fa-check-circle text-white text-xl"></i>
+            <span id="toastMessage" class="flex-1 font-medium text-sm"></span>
+        </div>
+    </div>
+
+
+    <!-- Notification Sounds -->
+    <audio id="addSound" src="./assets/sounds/added.mp3" preload="auto"></audio>
+    <audio id="deductSound" src="./assets/sounds/deducted.mp3" preload="auto"></audio>
+
+
+
+
+
+    <!-- Custom Scripts -->
+    <script src="./assets/js/summary.js"></script>
+
+
+
+
+</body>
+
+</html>
